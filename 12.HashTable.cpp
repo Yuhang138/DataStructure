@@ -49,6 +49,41 @@ public:
         table_=nullptr;
     }
 
+private:
+//扩容
+void expand()
+{
+    ++primeIdx_;
+    if(primeIdx_==PRIME_SIZE)
+    {
+       throw"HashTable is too large,can not expand anymore!";
+    }
+    Bucket*newTable=new Bucket[primes_[primeIdx_]];
+    for(int i=0;i<tableSize_;i++)
+    {
+        if(table_[i].state_==STATE_USING)//旧表有效的数据，重新哈希放到扩容后的新表里
+        {
+            int idx=table_[i].key_%primes_[primeIdx_];
+            int k=idx;
+            do
+            {
+              if(newTable[k].state_!=STATE_USING)
+              {
+                newTable[k].state_=STATE_USING;
+                newTable[k].key_=table_[i].key_;
+                break;
+              }
+              k=(k+1)%primes_[primeIdx_];
+            } while (k!=idx);
+            delete[]table_;
+            table_=newTable;
+            tableSize_=primes_[primeIdx_];
+        }
+
+    }
+
+}
+
 public:
 //插入元素
 bool insert(int key)
@@ -92,8 +127,24 @@ bool erase(int key)
         i=(i+1)%tableSize_;
     } while (i!=idx&&table_[i].state_!=STATE_UNUSE);
     
-    
+    return true;
 }
+//查询
+bool find(int key)
+{
+     int idx=key%tableSize_;
+    int i=idx;
+    do
+    {
+        if(table_[i].state_==STATE_USING &&table_[i].key_==key)
+        {
+            return true;
+        }
+        i=(i+1)%tableSize_;
+    } while (i!=idx&&table_[i].state_!=STATE_UNUSE);
+    return false;
+}
+
 
 private:
     Bucket *table_;//指向动态开辟的哈希表
